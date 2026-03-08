@@ -53,7 +53,7 @@ class MoonshineTranscriber(Transcriber):
         initial_prompt: Optional[str] = None,
     ) -> str:
         """Returns transcription for WAV file."""
-        audio_data, sample_rate = load_wav_file(input_file)
+        audio_data, sample_rate = load_wav_file(wav_path)
 
         result = self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
         _LOGGER.debug(f"Got {result}")

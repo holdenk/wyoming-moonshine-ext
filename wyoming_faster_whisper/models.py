@@ -166,7 +166,7 @@ class ModelLoader:
             elif stt_library == SttLibrary.MOONSHINE:
                 transcriber = MoonshineTranscriber(
                     model,
-                    language=language,
+                    language=language or "en",
                     cache_dir=self.download_dir)
             else:
                 transcriber = FasterWhisperTranscriber(
