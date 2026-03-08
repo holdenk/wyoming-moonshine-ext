@@ -24,6 +24,7 @@ classifiers = [
 dependencies = [
     "wyoming>=1.8,<2",
     "faster-whisper>=1.1.0,<2",
+    "moonshine-voice",
     "requests",  # needed by faster-whisper
 ]
 

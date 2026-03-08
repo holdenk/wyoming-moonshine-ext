@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 from .const import SttLibrary, Transcriber
 from .faster_whisper_handler import FasterWhisperTranscriber
+from .moonshine_handler import MoonshineTranscriber
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +60,14 @@ class ModelLoader:
 
         # Check dependencies
         try:
+            import moonshine
+            has_moonshine = True
+            _LOGGER.debug("moonshine is available")
+        except:
+            _LOGGER.debug("moonshine is not available")
+            has_moonshine = False
+
+        try:
             from .sherpa_handler import SherpaTranscriber
 
             has_sherpa = True
@@ -90,7 +99,11 @@ class ModelLoader:
             # Default to faster-whisper
             stt_library = SttLibrary.FASTER_WHISPER
 
-            if self.model is None:  # auto
+            # If moonshine is available prefer it
+            if has_moonshine:
+                stt_library = SttLibrary.MOONSHINE
+                _LOGGER.debug("Using moonshine for speech-to-text")
+            elif self.model is None:  # auto
                 if (language == "ru") and has_onnx_asr:
                     # Prefer GigaAM via onnx-asr
                     stt_library = SttLibrary.ONNX_ASR
@@ -150,6 +163,11 @@ class ModelLoader:
                     cache_dir=self.download_dir,
                     local_files_only=self.local_files_only,
                 )
+            elif stt_library == SttLibrary.MOONSHINE:
+                transcriber = MoonshineTranscriber(
+                    model,
+                    language=language,
+                    cache_dir=self.download_dir)
             else:
                 transcriber = FasterWhisperTranscriber(
                     model,
@@ -186,6 +204,12 @@ class ModelLoader:
 
 def guess_model(stt_library: SttLibrary, language: Optional[str], is_arm: bool) -> str:
     """Automatically guess STT model id."""
+    if stt_library == SttLibrary.MOONSHINE:
+        # For arm lets go with small for safety.
+        if is_arm:
+            return "small"
+        else:
+            return "medium"
     if stt_library == SttLibrary.SHERPA:
         if language == "en":
             return "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8"
