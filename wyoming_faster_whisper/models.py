@@ -138,6 +138,8 @@ class ModelLoader:
 
         key = (stt_library, model)
 
+        # For some reason the HA pipeline has some hard coded to look for faster whisper, so we always
+        # give moonshine if available and the ask is for whisper.
         async with self._transcriber_lock[key]:
             transcriber = self._transcriber.get(key)
             if transcriber is not None:
@@ -169,14 +171,10 @@ class ModelLoader:
                     language=language or "en",
                     cache_dir=self.download_dir)
             else:
-                transcriber = FasterWhisperTranscriber(
+                transcriber = MoonshineTranscriber(
                     model,
-                    cache_dir=self.download_dir,
-                    device=self.device,
-                    compute_type=self.compute_type,
-                    cpu_threads=self.cpu_threads,
-                    vad_parameters=self.vad_parameters,
-                )
+                    language=language or "en",
+                    cache_dir=self.download_dir)
 
             self._transcriber[key] = transcriber
 
