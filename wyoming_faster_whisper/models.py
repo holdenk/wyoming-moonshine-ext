@@ -177,6 +177,9 @@ class ModelLoader:
                     cache_dir=self.download_dir)
 
             self._transcriber[key] = transcriber
+            # Extra keys for faster-whisper because pipeline issues
+            for whisper_model in ["openai/whisper-tiny.en", "openai/whisper-base.en", "openai/whisper-tiny", "openai/whisper-base", model]:
+                self._transcriber[(SttLibrary.FASTER_WHISPER, whisper_model)] = transcriber
 
         _LOGGER.debug(f"Setup transcribers {self._transcriber.keys()}")
 
