@@ -180,6 +180,8 @@ class ModelLoader:
 
             self._transcriber[key] = transcriber
 
+        _LOGGER.debug(f"Setup transcribers {self._transcriber.keys()}")
+
         return transcriber
 
     async def transcribe(
@@ -189,6 +191,7 @@ class ModelLoader:
 
         Assume WAV file is 16Khz 16-bit mono PCM.
         """
+        _LOGGER.debug(f"Transcribing audio for {language} from {wav_path}")
         transcriber = await self.load_transcriber(language)
         text = await asyncio.to_thread(
             transcriber.transcribe,

@@ -37,13 +37,20 @@ class MoonshineTranscriber(Transcriber):
             model_size = ModelArch.MEDIUM_STREAMING
         elif model_id == "tiny":
             model_size = ModelArch.TINY
+        _LOGGER.debug(f"Starting moonshine model {language} {model_size}")
         model_path, model_arch = get_model_for_language(language, model_size)
         self.recognizer = MT(model_path=model_path, model_arch=model_arch)
 
 
         # Prime model so that the first transcription will be fast
-        self.recognizer.start()
-        self.recognizer.transcribe_without_streaming(np.zeros(shape=(128), dtype=np.float32), 32)
+        _LOGGER.debug(f"Priming model with zeros...")
+        try:
+            result = self.recognizer.transcribe_without_streaming(
+                np.zeros(shape=(128), dtype=np.float32),
+                32)
+        except Exception as e:
+            _LOGGER.debug(f"Error priming model {e}")
+        _LOGGER.debug(f"Model ready.")
 
     def transcribe(
         self,
@@ -55,6 +62,9 @@ class MoonshineTranscriber(Transcriber):
         """Returns transcription for WAV file."""
         audio_data, sample_rate = load_wav_file(wav_path)
 
-        result = self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
-        _LOGGER.debug(f"Got {result}")
+        lines = self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
+        _LOGGER.debug(f"Got {lines}")
+        result = ""
+        for line in lines:
+            result += line.text + "\n"
         return result
