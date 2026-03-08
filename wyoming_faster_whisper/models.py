@@ -9,7 +9,6 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 from .const import SttLibrary, Transcriber
 from .faster_whisper_handler import FasterWhisperTranscriber
-from .moonshine_handler import MoonshineTranscriber
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,11 +59,12 @@ class ModelLoader:
 
         # Check dependencies
         try:
-            import moonshine
+            import moonshine_voice
+            from .moonshine_handler import MoonshineTranscriber
             has_moonshine = True
             _LOGGER.debug("moonshine is available")
-        except:
-            _LOGGER.debug("moonshine is not available")
+        except Exception as e:
+            _LOGGER.debug(f"moonshine is not available: {e}")
             has_moonshine = False
 
         try:

@@ -35,6 +35,8 @@ class MoonshineTranscriber(Transcriber):
         model_size = ModelArch.SMALL_STREAMING
         if model_id == "medium":
             model_size = ModelArch.MEDIUM_STREAMING
+        else model_id == "tiny":
+            model_size = ModelArch.TINY
         model_path, model_arch = get_model_for_language(language, model_size)
         self.recognizer = MT(model_path=model_path, model_arch=model_arch)
 
