@@ -15,6 +15,7 @@ from . import __version__
 from .const import AUTO_LANGUAGE, AUTO_MODEL, PARAKEET_LANGUAGES, SttLibrary
 from .dispatch_handler import DispatchEventHandler
 from .models import ModelLoader
+import moonshine_voice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,8 +28,8 @@ async def main() -> None:
     parser.add_argument(
         "--zeroconf",
         nargs="?",
-        const="faster-whisper",
-        help="Enable discovery over zeroconf with optional name (default: faster-whisper)",
+        const="moonshine",
+        help="Enable discovery over zeroconf with optional name (default: moonshine)",
     )
     #
     parser.add_argument(
@@ -120,6 +121,8 @@ async def main() -> None:
         version=__version__,
         help="Print version and exit",
     )
+
+    # Parse the args
     args = parser.parse_args()
 
     if not args.download_dir:
@@ -140,30 +143,19 @@ async def main() -> None:
         args.beam_size = 1 if is_arm else 5
         _LOGGER.debug("Beam size automatically selected: %s", args.beam_size)
 
-    # Resolve model name
-    model_name = args.model
-    model_match = re.match(r"^(tiny|base|small|medium)[.-]int8$", args.model)
-    if model_match:
-        # Original models re-uploaded to huggingface
-        model_size = model_match.group(1)
-        model_name = f"{model_size}-int8"
-        args.model = f"rhasspy/faster-whisper-{model_name}"
-
-    if args.language == AUTO_LANGUAGE:
-        # Whisper does not understand auto
-        args.language = None
-
     if args.model == AUTO_MODEL:
         args.model = None
+
+    model_name = "moonshine"
 
     wyoming_info = Info(
         asr=[
             AsrProgram(
-                name="faster-whisper",
-                description="Faster Whisper transcription with CTranslate2",
+                name="moonshine",
+                description="moonshine",
                 attribution=Attribution(
-                    name="Guillaume Klein",
-                    url="https://github.com/guillaumekln/faster-whisper/",
+                    name="Moonshine",
+                    url="https://github.com/moonshine-ai/moonshine",
                 ),
                 installed=True,
                 version=__version__,
@@ -172,19 +164,12 @@ async def main() -> None:
                         name=model_name,
                         description=model_name,
                         attribution=Attribution(
-                            name="Systran",
-                            url="https://huggingface.co/Systran",
+                            name="moonshine",
+                            url="https://github.com/moonshine-ai/moonshine",
                         ),
                         installed=True,
-                        languages=sorted(
-                            list(
-                                # pylint: disable=protected-access
-                                set(faster_whisper.tokenizer._LANGUAGE_CODES).union(
-                                    PARAKEET_LANGUAGES
-                                )
-                            )
-                        ),
-                        version=faster_whisper.__version__,
+                        languages=["en", "es", "cn"],
+                        version=moonshine_voice.__version__,
                     )
                 ],
             )
