@@ -2,7 +2,7 @@ FROM debian:bookworm-slim
 ARG TARGETARCH
 ARG TARGETVARIANT
 
-# Install faster-whisper
+# Install wyoming-moonshine
 WORKDIR /usr/src
 
 COPY ./pyproject.toml ./
@@ -18,12 +18,7 @@ RUN \
         setuptools \
         wheel \
     && .venv/bin/pip3 install --no-cache-dir \
-        --extra-index-url 'https://download.pytorch.org/whl/cpu' \
-        'torch==2.6.0' \
-    \
-    && .venv/bin/pip3 install --no-cache-dir \
-        --extra-index-url https://www.piwheels.org/simple \
-        -e '.[zeroconf,transformers,sherpa,onnx-asr]' \
+        -e '.[zeroconf]' \
     \
     && rm -rf /var/lib/apt/lists/*
 

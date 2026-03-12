@@ -1,5 +1,5 @@
 [MASTER]
-ignore=faster_whisper
+ignore=moonshine
 
 [MESSAGES CONTROL]
 disable=

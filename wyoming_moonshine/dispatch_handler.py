@@ -86,8 +86,6 @@ class DispatchEventHandler(AsyncEventHandler):
                 self._transcriber.transcribe,
                 self._wav_path,
                 self._language,
-                beam_size=self._loader.beam_size,
-                initial_prompt=self._loader.initial_prompt,
             )
 
             _LOGGER.info(text)

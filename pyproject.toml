@@ -1,21 +1,19 @@
 [project]
-name = "wyoming-faster-whisper"
-version = "3.1.1"
-description = "Wyoming Server for Faster Whisper"
+name = "wyoming-moonshine"
+version = "4.0.0"
+description = "Wyoming Server for Moonshine speech-to-text"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Michael Hansen", email = "mike@rhasspy.org"}
+    {name = "Holden Karau"}
 ]
-keywords = ["rhasspy", "wyoming", "whisper", "stt"]
+keywords = ["wyoming", "moonshine", "stt"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -23,12 +21,11 @@ classifiers = [
 ]
 dependencies = [
     "wyoming>=1.8,<2",
-    "faster-whisper>=1.1.0,<2",
-    "requests",  # needed by faster-whisper
+    "moonshine-voice",
 ]
 
 [project.urls]
-Homepage = "http://github.com/rhasspy/wyoming-faster-whisper"
+Homepage = "https://github.com/holdenk/wyoming-moonshine-ext"
 
 [tool.setuptools]
 platforms = ["any"]
@@ -36,11 +33,11 @@ zip-safe  = true
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["wyoming_faster_whisper"]
+include = ["wyoming_moonshine"]
 exclude = ["tests"]
 
 [project.scripts]
-wyoming-faster-whisper = "wyoming_faster_whisper.__main__:run"
+wyoming-moonshine = "wyoming_moonshine.__main__:run"
 
 [build-system]
 requires = ["setuptools>=42", "wheel"]
@@ -68,15 +65,6 @@ dev = [
     "pylint",
     "pytest",
     "pytest-asyncio",
-]
-transformers = [
-    "transformers[torch]==4.52.4",
-]
-sherpa = [
-    "sherpa-onnx==1.12.15",
-]
-onnx_asr = [
-    "onnx-asr[cpu,hub]==0.7.0",
 ]
 zeroconf = [
     "wyoming[zeroconf]",

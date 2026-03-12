@@ -24,7 +24,10 @@ jobs:
 
       - name: Install
         run: |
-          script/setup --dev --transformers --sherpa
+          script/setup --dev
+
+      - name: Lint and type check
+        run: script/lint
 
       - name: Run tests
         run: script/test
