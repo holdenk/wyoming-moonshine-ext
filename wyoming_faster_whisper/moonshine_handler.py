@@ -63,7 +63,7 @@ class MoonshineTranscriber(Transcriber):
         audio_data, sample_rate = load_wav_file(wav_path)
 
         transcript = self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
-        _LOGGER.debug(f"Got {lines}")
+        _LOGGER.debug(f"Got {transcript} w/ lines {transcript.lines}")
         result = ""
         for line in transcript.lines:
             result += line.text + "\n"
