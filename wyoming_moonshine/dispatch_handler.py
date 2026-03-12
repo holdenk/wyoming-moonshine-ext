@@ -68,7 +68,7 @@ class DispatchEventHandler(AsyncEventHandler):
             return True
 
         if AudioStop.is_type(event.type):
-            _LOGGER.debug("Audio stoppped")
+            _LOGGER.debug("Audio stopped")
 
             if self._transcriber is None:
                 # Get transcriber that was loading in the background
