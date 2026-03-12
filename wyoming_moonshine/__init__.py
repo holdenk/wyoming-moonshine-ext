@@ -1,0 +1,7 @@
+"""Wyoming server for moonshine."""
+
+from importlib.metadata import version
+
+__version__ = version("wyoming_moonshine")
+
+__all__ = ["__version__"]

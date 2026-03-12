@@ -64,7 +64,7 @@ jobs:
       - name: Upload wheels and sdist
         uses: actions/upload-artifact@v4
         with:
-          name: dist-wyoming-faster-whisper
+          name: dist-wyoming-moonshine
           path: |
             dist/*.whl
             dist/*.tar.gz
@@ -91,8 +91,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            rhasspy/wyoming-whisper:latest
-            rhasspy/wyoming-whisper:${{ steps.read_ver.outputs.tag }}
+            holdenk/wyoming-moonshine:latest
+            holdenk/wyoming-moonshine:${{ steps.read_ver.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

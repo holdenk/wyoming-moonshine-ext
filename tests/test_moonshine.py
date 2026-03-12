@@ -1,4 +1,4 @@
-"""Tests for faster-whisper."""
+"""Tests for moonshine."""
 
 import asyncio
 import re
@@ -12,35 +12,23 @@ from wyoming.audio import AudioStart, AudioStop, wav_to_chunks
 from wyoming.event import async_read_event, async_write_event
 from wyoming.info import Describe, Info
 
+from . import _DIR, _LOCAL_DIR, _SAMPLES_PER_CHUNK, _START_TIMEOUT, _TRANSCRIBE_TIMEOUT
 
-from . import _LOCAL_DIR, _SAMPLES_PER_CHUNK, _START_TIMEOUT, _TRANSCRIBE_TIMEOUT, _DIR
 
-
-@pytest.mark.parametrize(
-    ("stt_library", "model"),
-    [
-        ("faster-whisper", "base-int8"),
-        ("transformers", "openai/whisper-base.en"),
-        ("sherpa", "auto"),
-    ],
-)
 @pytest.mark.asyncio
-async def test_faster_whisper(stt_library: str, model: str) -> None:
+async def test_moonshine() -> None:
     proc = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
-        "wyoming_faster_whisper",
+        "wyoming_moonshine",
         "--uri",
         "stdio://",
-        "--stt-library",
-        stt_library,
         "--model",
-        model,
+        "auto",
         "--data-dir",
         str(_LOCAL_DIR),
         "--language",
         "en",
-        "--vad-filter",
         stdin=PIPE,
         stdout=PIPE,
     )

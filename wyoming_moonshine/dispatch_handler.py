@@ -5,7 +5,7 @@ import logging
 import os
 import tempfile
 import wave
-from typing import Optional
+from typing import Any, Optional
 
 from wyoming.asr import Transcribe, Transcript
 from wyoming.audio import AudioChunk, AudioChunkConverter, AudioStop
@@ -20,14 +20,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DispatchEventHandler(AsyncEventHandler):
-    """Dispatches to appropriate transcriber."""
+    """Dispatches to moonshine transcriber."""
 
     def __init__(
         self,
         wyoming_info: Info,
         loader: ModelLoader,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
 
@@ -35,7 +35,7 @@ class DispatchEventHandler(AsyncEventHandler):
 
         self._loader = loader
         self._transcriber: Optional[Transcriber] = None
-        self._transcriber_future: Optional[asyncio.Future] = None
+        self._transcriber_future: Optional[asyncio.Task[Transcriber]] = None
         self._language: Optional[str] = None
 
         self._wav_dir = tempfile.TemporaryDirectory()
@@ -46,8 +46,6 @@ class DispatchEventHandler(AsyncEventHandler):
 
     async def handle_event(self, event: Event) -> bool:
         if AudioChunk.is_type(event.type):
-            # Audio is saved to a WAV file for transcription later.
-            # None of the underlying models support streaming.
             chunk = self._audio_converter.convert(AudioChunk.from_event(event))
 
             if self._wav_file is None:
@@ -59,8 +57,6 @@ class DispatchEventHandler(AsyncEventHandler):
             self._wav_file.writeframes(chunk.audio)
 
             if (self._transcriber is None) and (self._transcriber_future is None):
-                # Load the transcriber in the background.
-                # Hopefully it's ready by the time the audio stops.
                 self._transcriber_future = asyncio.create_task(
                     self._loader.load_transcriber(self._language)
                 )
@@ -68,10 +64,9 @@ class DispatchEventHandler(AsyncEventHandler):
             return True
 
         if AudioStop.is_type(event.type):
-            _LOGGER.debug("Audio stoppped")
+            _LOGGER.debug("Audio stopped")
 
             if self._transcriber is None:
-                # Get transcriber that was loading in the background
                 assert self._transcriber_future is not None
                 self._transcriber = await self._transcriber_future
 
@@ -81,13 +76,10 @@ class DispatchEventHandler(AsyncEventHandler):
             self._wav_file.close()
             self._wav_file = None
 
-            # Do transcription in a separate thread
             text = await asyncio.to_thread(
                 self._transcriber.transcribe,
                 self._wav_path,
                 self._language,
-                beam_size=self._loader.beam_size,
-                initial_prompt=self._loader.initial_prompt,
             )
 
             _LOGGER.info(text)
