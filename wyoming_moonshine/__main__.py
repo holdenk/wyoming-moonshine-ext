@@ -9,7 +9,7 @@ from wyoming.info import AsrModel, AsrProgram, Attribution, Info
 from wyoming.server import AsyncServer, AsyncTcpServer
 
 from . import __version__
-from .const import AUTO_LANGUAGE, AUTO_MODEL
+from .const import AUTO_MODEL
 from .dispatch_handler import DispatchEventHandler
 from .moonshine_handler import MoonshineTranscriber
 
@@ -41,8 +41,8 @@ async def main() -> None:
     )
     parser.add_argument(
         "--language",
-        default=AUTO_LANGUAGE,
-        help=f"Default language to set for transcription (default: {AUTO_LANGUAGE})",
+        default="en",
+        help=f"Default language to set for transcription (default: en)",
     )
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     parser.add_argument(

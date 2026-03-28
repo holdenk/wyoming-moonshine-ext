@@ -14,7 +14,6 @@ from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler
 
 from .moonshine_handler import MoonshineTranscriber
-from .models import ModelLoader
 
 _LOGGER = logging.getLogger(__name__)
 
