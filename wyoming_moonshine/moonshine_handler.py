@@ -8,14 +8,40 @@ from typing import Optional, Union
 import numpy as np
 from moonshine_voice import ModelArch
 from moonshine_voice import Transcriber as MT
+from moonshine_voice import TranscriptEventListener, LineStarted, LineCompleted, Error
 from moonshine_voice import get_model_for_language, load_wav_file
-
-from .const import Transcriber
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class MoonshineTranscriber(Transcriber):
+class AccumulatingListener(TranscriptEventListener):
+    def __init__(self):
+        self.lines = []
+
+    def on_line_started(self, event: LineStarted) -> None:
+        """Called when a new transcription line starts."""
+        if len(self.lines) + 1 < event.line.line_id:
+            raise Exception(
+                "Got unexpected line id %s, expected at most %s",
+                event.line.line_id,
+                len(self.lines) + 1,
+            )
+
+    def on_line_completed(self, event: LineCompleted) -> None:
+        """Called when a transcription line is completed."""
+        _LOGGER.debug("Setting line to %s", event.line.text)
+        self.lines[event.line.line_id] = event.line.text
+
+    def on_error(self, event: Error) -> None:
+        """Called when an error occurs."""
+        _LOGGER.error("Error during transcription: %s", event.error)
+
+    def get_text(self) -> str:
+        """Get the current accumulated text."""
+        return "\n".join(self.lines)
+
+
+class MoonshineTranscriber:
     """Wrapper for moonshine model."""
 
     def __init__(
@@ -34,6 +60,7 @@ class MoonshineTranscriber(Transcriber):
         _LOGGER.debug("Starting moonshine model %s %s", language, model_size)
         model_path, model_arch = get_model_for_language(language, model_size)
         self.recognizer = MT(model_path=model_path, model_arch=model_arch)
+        self.listener: Optional[AccumulatingListener] = None
 
         # Prime model so that the first transcription will be fast
         _LOGGER.debug("Priming model with zeros...")
@@ -45,12 +72,21 @@ class MoonshineTranscriber(Transcriber):
             _LOGGER.debug("Error priming model: %s", e)
         _LOGGER.debug("Model ready.")
 
-    def transcribe(self, wav_path: Union[str, Path], language: Optional[str]) -> str:
-        """Returns transcription for WAV file."""
-        audio_data, sample_rate = load_wav_file(wav_path)
+    async def get_and_clear_transcription(self) -> str:
+        # Indicate we have no more data coming
+        self.recognizer.stop()
+        text = ""
+        if not self.listener:
+            raise Exception("No transcription listener found")
+        else:
+            text = self.listener.get_text()
+        # Remove the current listener at the end of the transcription
+        self.recognizer.remove_all_listeners()
+        _LOGGER.debug("Got %s", text)
+        return text
 
-        transcript = self.recognizer.transcribe_without_streaming(
-            audio_data, sample_rate
-        )
-        _LOGGER.debug("Got %s", transcript)
-        return "\n".join(line.text for line in transcript.lines)
+    async def queue_chunk(self, audio_data, sample_rate):
+        """Queue a chunk for transcription"""
+        if not self.listener:
+            self.listener = AccumulatingListener()
+        self.recognizer.transcribe_without_streaming(audio_data, sample_rate)

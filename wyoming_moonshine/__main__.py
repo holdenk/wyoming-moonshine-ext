@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import logging
+import platform
 from functools import partial
 
 from wyoming.info import AsrModel, AsrProgram, Attribution, Info
@@ -10,7 +11,7 @@ from wyoming.server import AsyncServer, AsyncTcpServer
 from . import __version__
 from .const import AUTO_LANGUAGE, AUTO_MODEL
 from .dispatch_handler import DispatchEventHandler
-from .models import ModelLoader
+from .moonshine_handler import MoonshineTranscriber
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -94,20 +95,26 @@ async def main() -> None:
         ],
     )
 
-    loader = ModelLoader(
-        preferred_language=args.language,
-        download_dir=args.download_dir,
-        model=model,
+    # Load model
+    _LOGGER.debug("Loading transcriber")
+    model = args.model
+    if not model:
+        machine = platform.machine().lower()
+        is_arm = ("arm" in machine) or ("aarch" in machine)
+        model = "small" if is_arm else "medium"
+        _LOGGER.debug("Auto-Selected model: %s", model)
+    else:
+        _LOGGER.debug("Selected model: %s", model)
+    _transcriber = MoonshineTranscriber(
+        model_id=model, language=args.language, cache_dir=args.download_dir
     )
 
-    # Load model
-    _LOGGER.debug("Pre-loading transcriber")
-    await loader.load_transcriber()
+    lang = args.language or "en"
 
     handler_factory = partial(
         DispatchEventHandler,
         wyoming_info,
-        loader,
+        _transcriber,
     )
 
     server = AsyncServer.from_uri(args.uri)

@@ -13,7 +13,7 @@ from wyoming.event import Event
 from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler
 
-from .const import Transcriber
+from .moonshine_handler import MoonshineTranscriber
 from .models import ModelLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class DispatchEventHandler(AsyncEventHandler):
     def __init__(
         self,
         wyoming_info: Info,
-        loader: ModelLoader,
+        transcriber: MoonshineTranscriber,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -33,63 +33,27 @@ class DispatchEventHandler(AsyncEventHandler):
 
         self.wyoming_info_event = wyoming_info.event()
 
-        self._loader = loader
-        self._transcriber: Optional[Transcriber] = None
-        self._transcriber_future: Optional[asyncio.Task[Transcriber]] = None
         self._language: Optional[str] = None
-
-        self._wav_dir = tempfile.TemporaryDirectory()
-        self._wav_path = os.path.join(self._wav_dir.name, "speech.wav")
-        self._wav_file: Optional[wave.Wave_write] = None
+        self._transcriber = transcriber
 
         self._audio_converter = AudioChunkConverter(rate=16000, width=2, channels=1)
 
     async def handle_event(self, event: Event) -> bool:
         if AudioChunk.is_type(event.type):
             chunk = self._audio_converter.convert(AudioChunk.from_event(event))
-
-            if self._wav_file is None:
-                self._wav_file = wave.open(self._wav_path, "wb")
-                self._wav_file.setframerate(chunk.rate)
-                self._wav_file.setsampwidth(chunk.width)
-                self._wav_file.setnchannels(chunk.channels)
-
-            self._wav_file.writeframes(chunk.audio)
-
-            if (self._transcriber is None) and (self._transcriber_future is None):
-                self._transcriber_future = asyncio.create_task(
-                    self._loader.load_transcriber(self._language)
-                )
+            await self._transcriber.queue_chunk(chunk.audio, chunk.rate)
 
             return True
 
         if AudioStop.is_type(event.type):
             _LOGGER.debug("Audio stopped")
 
-            if self._transcriber is None:
-                assert self._transcriber_future is not None
-                self._transcriber = await self._transcriber_future
-
-            assert self._transcriber is not None
-            assert self._wav_file is not None
-
-            self._wav_file.close()
-            self._wav_file = None
-
-            text = await asyncio.to_thread(
-                self._transcriber.transcribe,
-                self._wav_path,
-                self._language,
-            )
+            text = await self._transcriber.get_and_clear_transcription()
 
             _LOGGER.info(text)
 
             await self.write_event(Transcript(text=text).event())
             _LOGGER.debug("Completed request")
-
-            # Reset
-            self._language = None
-            self._transcriber = None
 
             return False
 
