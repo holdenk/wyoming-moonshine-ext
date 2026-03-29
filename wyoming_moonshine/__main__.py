@@ -42,7 +42,7 @@ async def main() -> None:
     parser.add_argument(
         "--language",
         default="en",
-        help=f"Default language to set for transcription (default: en)",
+        help="Default language to set for transcription (default: en)",
     )
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     parser.add_argument(
@@ -105,11 +105,10 @@ async def main() -> None:
         _LOGGER.debug("Auto-Selected model: %s", model)
     else:
         _LOGGER.debug("Selected model: %s", model)
-    _transcriber = MoonshineTranscriber(
-        model_id=model, language=args.language, cache_dir=args.download_dir
-    )
-
     lang = args.language or "en"
+    _transcriber = MoonshineTranscriber(
+        model_id=model, language=lang, cache_dir=args.download_dir
+    )
 
     handler_factory = partial(
         DispatchEventHandler,
