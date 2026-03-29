@@ -78,8 +78,7 @@ class MoonshineTranscriber:
         text = ""
         if not self.listener:
             raise Exception("No transcription listener found")
-        else:
-            text = self.listener.get_text()
+        text = self.listener.get_text()
         # Remove the current listener at the end of the transcription
         self.recognizer.remove_all_listeners()
         _LOGGER.debug("Got %s", text)

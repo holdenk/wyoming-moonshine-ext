@@ -34,7 +34,9 @@ disable=
   no-name-in-module,
   protected-access,
   consider-using-with,
-  too-many-positional-arguments
+  too-many-positional-arguments,
+  broad-exception-raised,
+  raising-format-tuple
 
 [FORMAT]
 expected-line-ending-format=LF
