@@ -89,4 +89,5 @@ class MoonshineTranscriber:
         """Queue a chunk for transcription"""
         if not self.listener:
             self.listener = AccumulatingListener()
+            self.recognizer.add_listener(self.listener)
         self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
