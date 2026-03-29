@@ -92,4 +92,6 @@ class MoonshineTranscriber:
             _LOGGER.debug("Creating new listener for transcription")
             self.listener = AccumulatingListener()
             self.recognizer.add_listener(self.listener)
+        else:
+            _LOGGER.debug("Adding chunk to existing transcription")
         self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
