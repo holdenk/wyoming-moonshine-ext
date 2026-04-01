@@ -80,6 +80,9 @@ class MoonshineTranscriber:
 
     async def get_and_clear_transcription(self) -> str:
         # Indicate we have no more data coming
+        _LOGGER.debug("Calling update transcription before we stop the stream.")
+        self.recognizer.update_transcription()
+        _LOGGER.debug("Stopping recognizer to finalize transcription")
         self.recognizer.stop()
         text = ""
         if not self.listener:
@@ -96,6 +99,8 @@ class MoonshineTranscriber:
             return
         _LOGGER.debug("Starting new transcription")
         self.recognizer.start()
+        _LOGGER.debug("Recognizer started, clearing listeners")
+        self.recognizer.remove_all_listeners()
         _LOGGER.debug("Creating new listener for transcription")
         self.listener = AccumulatingListener()
         self.recognizer.add_listener(self.listener)
@@ -108,4 +113,5 @@ class MoonshineTranscriber:
             await self.start_transcription()
         else:
             _LOGGER.debug(f"Adding chunk of size {len(audio_data)} at rate {sample_rate}")
-        self.recognizer.add_audio(audio_data, sample_rate)
+        add_result = self.recognizer.add_audio(audio_data, sample_rate)
+        _LOGGER.debug(f"Chunk added, result: {add_result}?")
