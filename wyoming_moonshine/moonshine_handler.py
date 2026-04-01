@@ -108,4 +108,5 @@ class MoonshineTranscriber:
             await self.start_transcription()
         else:
             _LOGGER.debug(f"Adding chunk of size {len(audio_data)} at rate {sample_rate}")
+            _LOGGER.debug(f"Start of chunk is {audio_data[:15]}...")
         self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
