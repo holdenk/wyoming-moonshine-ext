@@ -8,7 +8,7 @@ from typing import Optional, Union
 import numpy as np
 from moonshine_voice import ModelArch
 from moonshine_voice import Transcriber as MT
-from moonshine_voice import TranscriptEventListener, LineStarted, LineCompleted, Error
+from moonshine_voice import TranscriptEventListener, LineStarted, LineTextChanged, LineCompleted, Error
 from moonshine_voice import get_model_for_language, load_wav_file
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,10 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 
 class AccumulatingListener(TranscriptEventListener):
     def __init__(self):
-        self.lines = []
+        self.lines = [""]
 
     def on_line_started(self, event: LineStarted) -> None:
         """Called when a new transcription line starts."""
+        _LOGGER.debug("Starting new line with id %s", event.line.line_id)
         if len(self.lines) + 1 < event.line.line_id:
             raise Exception(
                 "Got unexpected line id %s, expected at most %s",
@@ -27,9 +28,14 @@ class AccumulatingListener(TranscriptEventListener):
                 len(self.lines) + 1,
             )
 
+    def on_line_text_changed(self, event: LineTextChanged) -> None:
+        """Called when a transcription line is completed."""
+        _LOGGER.debug("Text changed: Setting line to %s", event.line.text)
+        self.lines[event.line.line_id] = event.line.text
+
     def on_line_completed(self, event: LineCompleted) -> None:
         """Called when a transcription line is completed."""
-        _LOGGER.debug("Setting line to %s", event.line.text)
+        _LOGGER.debug("Line completed: Setting line to %s", event.line.text)
         self.lines[event.line.line_id] = event.line.text
 
     def on_error(self, event: Error) -> None:
@@ -86,12 +92,14 @@ class MoonshineTranscriber:
 
     async def start_transcription(self):
         if self.listener:
-            raise Exception("Transcription already started")
+            _LOGGER.debug("Transcription already in progress, not starting new one")
+            return
         _LOGGER.debug("Starting new transcription")
         self.recognizer.start()
         _LOGGER.debug("Creating new listener for transcription")
         self.listener = AccumulatingListener()
         self.recognizer.add_listener(self.listener)
+        _LOGGER.debug("Listener added")
 
     async def queue_chunk(self, audio_data, sample_rate):
         """Queue a chunk for transcription"""

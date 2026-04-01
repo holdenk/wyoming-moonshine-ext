@@ -33,11 +33,13 @@ class DispatchEventHandler(AsyncEventHandler):
         self.wyoming_info_event = wyoming_info.event()
 
         self._language: Optional[str] = None
+        _LOGGER.debug("Initialized with language %s", self._language)
         self._transcriber = transcriber
 
         self._audio_converter = AudioChunkConverter(rate=16000, width=2, channels=1)
 
     async def handle_event(self, event: Event) -> bool:
+        _LOGGER.debug("Handling event...")
         _LOGGER.debug("Received event: %s", event.type)
         if AudioStart.is_type(event.type):
             _LOGGER.debug("Start of audio received, starting session")
