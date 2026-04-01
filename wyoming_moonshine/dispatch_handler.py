@@ -8,7 +8,7 @@ import wave
 from typing import Any, Optional
 
 from wyoming.asr import Transcribe, Transcript
-from wyoming.audio import AudioChunk, AudioChunkConverter, AudioStop
+from wyoming.audio import AudioChunk, AudioChunkConverter, AudioStop, AudioStart
 from wyoming.event import Event
 from wyoming.info import Describe, Info
 from wyoming.server import AsyncEventHandler
@@ -39,6 +39,11 @@ class DispatchEventHandler(AsyncEventHandler):
 
     async def handle_event(self, event: Event) -> bool:
         _LOGGER.debug("Received event: %s", event.type)
+        if AudioStart.is_type(event.type):
+            _LOGGER.debug("Start of audio received, starting session")
+            await self._transcriber.start_session()
+            return True
+
         if AudioChunk.is_type(event.type):
             _LOGGER.debug("Audio chunk received")
             chunk = self._audio_converter.convert(AudioChunk.from_event(event))

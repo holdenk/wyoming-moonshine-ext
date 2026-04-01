@@ -84,14 +84,20 @@ class MoonshineTranscriber:
         _LOGGER.debug("Got %s", text)
         return text
 
+    async def start_transcription(self):
+        if self.listener:
+            raise Exception("Transcription already started")
+        _LOGGER.debug("Starting new transcription")
+        self.recognizer.start()
+        _LOGGER.debug("Creating new listener for transcription")
+        self.listener = AccumulatingListener()
+        self.recognizer.add_listener(self.listener)
+
     async def queue_chunk(self, audio_data, sample_rate):
         """Queue a chunk for transcription"""
         if not self.listener:
-            _LOGGER.debug("Starting new transcription")
-            self.recognizer.start()
-            _LOGGER.debug("Creating new listener for transcription")
-            self.listener = AccumulatingListener()
-            self.recognizer.add_listener(self.listener)
+            _LOGGER.debug("No transcription service on first chunk, starting")
+            await self.start_transcription()
         else:
             _LOGGER.debug("Adding chunk to existing transcription")
         self.recognizer.transcribe_without_streaming(audio_data, sample_rate)
