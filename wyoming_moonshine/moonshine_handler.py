@@ -89,6 +89,7 @@ class MoonshineTranscriber:
         text = self.listener.get_text()
         # Remove the current listener at the end of the transcription
         self.recognizer.remove_all_listeners()
+        self.listener = None
         _LOGGER.debug(f"Got {text} from {self.chunks} chunks of audio!")
         return text
 
