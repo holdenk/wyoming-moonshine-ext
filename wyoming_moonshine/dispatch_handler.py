@@ -40,15 +40,12 @@ class DispatchEventHandler(AsyncEventHandler):
         self._audio_converter = AudioChunkConverter(rate=16000, width=2, channels=1)
 
     async def handle_event(self, event: Event) -> bool:
-        _LOGGER.debug("Handling event...")
-        _LOGGER.debug("Received event: %s", event.type)
         if AudioStart.is_type(event.type):
             _LOGGER.debug("Start of audio received, starting session")
             await self._transcriber.start_transcription()
             return True
 
         if AudioChunk.is_type(event.type):
-            _LOGGER.debug("Audio chunk received")
             chunk = self._audio_converter.convert(AudioChunk.from_event(event))
             await self._transcriber.queue_chunk(chunk.audio, chunk.rate)
             return True
