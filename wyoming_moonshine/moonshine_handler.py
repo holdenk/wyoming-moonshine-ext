@@ -89,14 +89,14 @@ class MoonshineTranscriber:
         text = self.listener.get_text()
         # Remove the current listener at the end of the transcription
         self.recognizer.remove_all_listeners()
-        _LOGGER.debug("Got %s", text)
+        _LOGGER.debug(f"Got {text} from {self.chunks} chunks of audio!")
         return text
 
     async def start_transcription(self):
         if self.listener:
             _LOGGER.debug("Transcription already in progress, not starting new one")
             return
-        self.sample_rate = None
+        self.chunks = 0
         _LOGGER.debug("Starting new transcription")
         self.recognizer.start()
         _LOGGER.debug("Recognizer started, existing clearing listeners")
@@ -116,12 +116,5 @@ class MoonshineTranscriber:
         samples = np.frombuffer(raw_audio_data, dtype=np.int16)
         audio_data = samples.astype(np.float32) / 32768.0
         stream = self.recognizer._default_stream
-        _LOGGER.debug(f"Adding chunk of size {len(audio_data)} at rate {sample_rate}")
-        _LOGGER.debug(
-            f"Listener is {self.listener} configured listeners are {stream._listeners}"
-        )
-        add_result = self.recognizer.add_audio(audio_data, sample_rate)
-        _LOGGER.debug(f"Chunk added, result: {add_result}?")
-        _LOGGER.debug(
-            f"Current stream time {stream._stream_time}, last updated at {stream._last_update_time}"
-        )
+        self.chunks = self.chunks + 1
+        self.recognizer.add_audio(audio_data, sample_rate)
