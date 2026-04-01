@@ -74,8 +74,6 @@ class MoonshineTranscriber:
 
     async def get_and_clear_transcription(self) -> str:
         # Indicate we have no more data coming
-        _LOGGER.debug("Calling update transcription before we stop the stream.")
-        self.recognizer.update_transcription()
         _LOGGER.debug("Stopping recognizer to finalize transcription")
         self.recognizer.stop()
         text = ""
