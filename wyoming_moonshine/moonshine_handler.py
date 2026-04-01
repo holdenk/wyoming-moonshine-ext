@@ -13,30 +13,34 @@ from moonshine_voice import get_model_for_language, load_wav_file
 
 _LOGGER = logging.getLogger(__name__)
 
-
 class AccumulatingListener(TranscriptEventListener):
     def __init__(self):
-        self.lines = [""]
+        _LOGGER.debug("Initializing AccumulatingListener")
+        self.lines = None
+        self.offset = 0
 
     def on_line_started(self, event: LineStarted) -> None:
         """Called when a new transcription line starts."""
         _LOGGER.debug("Starting new line with id %s", event.line.line_id)
-        if len(self.lines) + 1 < event.line.line_id:
+        if not self.lines:
+            self.lines = [""]
+            self.offset = event.line.line_id
+        if len(self.lines) + 1 < event.line.line_id-self.offset:
             raise Exception(
                 "Got unexpected line id %s, expected at most %s",
-                event.line.line_id,
+                event.line.line_id+self.offset,
                 len(self.lines) + 1,
             )
 
     def on_line_text_changed(self, event: LineTextChanged) -> None:
         """Called when a transcription line is completed."""
         _LOGGER.debug("Text changed: Setting line to %s", event.line.text)
-        self.lines[event.line.line_id] = event.line.text
+        self.lines[event.line.line_id-self.offset] = event.line.text
 
     def on_line_completed(self, event: LineCompleted) -> None:
         """Called when a transcription line is completed."""
         _LOGGER.debug("Line completed: Setting line to %s", event.line.text)
-        self.lines[event.line.line_id] = event.line.text
+        self.lines[event.line.line_id-self.offset] = event.line.text
 
     def on_error(self, event: Error) -> None:
         """Called when an error occurs."""
@@ -66,17 +70,7 @@ class MoonshineTranscriber:
         _LOGGER.debug("Starting moonshine model %s %s", language, model_size)
         model_path, model_arch = get_model_for_language(language, model_size)
         self.recognizer = MT(model_path=model_path, model_arch=model_arch)
-        self.listener: Optional[AccumulatingListener] = None
-
-        # Prime model so that the first transcription will be fast
-        _LOGGER.debug("Priming model with zeros...")
-        try:
-            self.recognizer.transcribe_without_streaming(
-                np.zeros(shape=(128,), dtype=np.float32), 32
-            )
-        except Exception as e:
-            _LOGGER.debug("Error priming model: %s", e)
-        _LOGGER.debug("Model ready.")
+        self.listener: Optional[TranscriptEventListener] = None
 
     async def get_and_clear_transcription(self) -> str:
         # Indicate we have no more data coming
@@ -97,21 +91,31 @@ class MoonshineTranscriber:
         if self.listener:
             _LOGGER.debug("Transcription already in progress, not starting new one")
             return
+        self.sample_rate = None
         _LOGGER.debug("Starting new transcription")
+        self.listener = AccumulatingListener()
         self.recognizer.start()
         _LOGGER.debug("Recognizer started, clearing listeners")
         self.recognizer.remove_all_listeners()
         _LOGGER.debug("Creating new listener for transcription")
-        self.listener = AccumulatingListener()
         self.recognizer.add_listener(self.listener)
         _LOGGER.debug("Listener added")
 
-    async def queue_chunk(self, audio_data, sample_rate):
+    async def queue_chunk(self, raw_audio_data, sample_rate):
         """Queue a chunk for transcription"""
         if not self.listener:
             _LOGGER.debug("No transcription service on first chunk, starting")
             await self.start_transcription()
-        else:
-            _LOGGER.debug(f"Adding chunk of size {len(audio_data)} at rate {sample_rate}")
+        if not self.sample_rate:
+            self.sample_rate = sample_rate
+        # raw_bytes: your bytes object or bytearray
+        samples = np.frombuffer(raw_audio_data, dtype=np.int16)
+
+        # normalize to [-1.0, 1.0)
+        audio_data = samples.astype(np.float32) / 32768.0
+        stream = self.recognizer._default_stream
+        _LOGGER.debug(f"Adding chunk of size {len(audio_data)} at rate {sample_rate}")
+        _LOGGER.debug(f"Listener is {self.listener} configured listeners are {stream._listeners}")
         add_result = self.recognizer.add_audio(audio_data, sample_rate)
         _LOGGER.debug(f"Chunk added, result: {add_result}?")
+        _LOGGER.debug(f"Current stream time {stream._stream_time}, last updated at {stream._last_update_time}")

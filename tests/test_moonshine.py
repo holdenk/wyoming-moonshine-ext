@@ -14,7 +14,6 @@ from wyoming.info import Describe, Info
 
 from . import _DIR, _LOCAL_DIR, _SAMPLES_PER_CHUNK, _START_TIMEOUT, _TRANSCRIBE_TIMEOUT
 
-
 @pytest.mark.asyncio
 async def test_moonshine() -> None:
     proc = await asyncio.create_subprocess_exec(

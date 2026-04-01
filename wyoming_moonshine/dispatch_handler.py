@@ -36,6 +36,9 @@ class DispatchEventHandler(AsyncEventHandler):
         _LOGGER.debug("Initialized with language %s", self._language)
         self._transcriber = transcriber
 
+        # This means were going to have 16 bits per sample since width = 2 (I think?)
+        self._audio_converter = AudioChunkConverter(rate=16000, width=2, channels=1)
+
     async def handle_event(self, event: Event) -> bool:
         _LOGGER.debug("Handling event...")
         _LOGGER.debug("Received event: %s", event.type)
@@ -46,7 +49,7 @@ class DispatchEventHandler(AsyncEventHandler):
 
         if AudioChunk.is_type(event.type):
             _LOGGER.debug("Audio chunk received")
-            chunk = AudioChunk.from_event(event)
+            chunk = self._audio_converter.convert(AudioChunk.from_event(event))
             await self._transcriber.queue_chunk(chunk.audio, chunk.rate)
             return True
 
@@ -64,7 +67,7 @@ class DispatchEventHandler(AsyncEventHandler):
 
         if Transcribe.is_type(event.type):
             transcribe = Transcribe.from_event(event)
-            self._language = transcribe.language or self._loader.preferred_language
+            self._language = transcribe.language or "en"
             _LOGGER.debug("Language set to %s", self._language)
 
             return True
