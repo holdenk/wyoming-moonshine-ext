@@ -91,11 +91,11 @@ class MoonshineTranscriber:
             return
         self.sample_rate = None
         _LOGGER.debug("Starting new transcription")
-        self.listener = AccumulatingListener()
         self.recognizer.start()
-        _LOGGER.debug("Recognizer started, clearing listeners")
+        _LOGGER.debug("Recognizer started, existing clearing listeners")
         self.recognizer.remove_all_listeners()
         _LOGGER.debug("Creating new listener for transcription")
+        self.listener = AccumulatingListener()
         self.recognizer.add_listener(self.listener)
         _LOGGER.debug("Listener added")
 
@@ -104,12 +104,9 @@ class MoonshineTranscriber:
         if not self.listener:
             _LOGGER.debug("No transcription service on first chunk, starting")
             await self.start_transcription()
-        if not self.sample_rate:
-            self.sample_rate = sample_rate
-        # raw_bytes: your bytes object or bytearray
-        samples = np.frombuffer(raw_audio_data, dtype=np.int16)
 
         # normalize to [-1.0, 1.0)
+        samples = np.frombuffer(raw_audio_data, dtype=np.int16)
         audio_data = samples.astype(np.float32) / 32768.0
         stream = self.recognizer._default_stream
         _LOGGER.debug(f"Adding chunk of size {len(audio_data)} at rate {sample_rate}")
