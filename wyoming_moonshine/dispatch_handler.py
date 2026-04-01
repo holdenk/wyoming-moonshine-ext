@@ -41,7 +41,7 @@ class DispatchEventHandler(AsyncEventHandler):
         _LOGGER.debug("Received event: %s", event.type)
         if AudioStart.is_type(event.type):
             _LOGGER.debug("Start of audio received, starting session")
-            await self._transcriber.start_session()
+            await self._transcriber.start_transcription()
             return True
 
         if AudioChunk.is_type(event.type):
