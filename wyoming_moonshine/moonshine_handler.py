@@ -55,7 +55,10 @@ class AccumulatingListener(TranscriptEventListener):
 
     def get_text(self) -> str:
         """Get the current accumulated text."""
-        return "\n".join(self.lines)
+        if self.lines:
+            return "\n".join(self.lines)
+        else:
+            return ""
 
 
 class MoonshineTranscriber:

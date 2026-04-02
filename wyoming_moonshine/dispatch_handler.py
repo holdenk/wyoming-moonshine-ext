@@ -31,9 +31,7 @@ class DispatchEventHandler(AsyncEventHandler):
         super().__init__(*args, **kwargs)
 
         self.wyoming_info_event = wyoming_info.event()
-
-        self._language: Optional[str] = None
-        _LOGGER.debug("Initialized with language %s", self._language)
+        _LOGGER.debug("Initialized with info: %s", self.wyoming_info_event)
         self._transcriber = transcriber
 
         # This means were going to have 16 bits per sample since width = 2 (I think?)
@@ -41,7 +39,7 @@ class DispatchEventHandler(AsyncEventHandler):
 
     async def handle_event(self, event: Event) -> bool:
         if AudioStart.is_type(event.type):
-            _LOGGER.debug("Start of audio received, starting session")
+            _LOGGER.debug(f"Start of audio received, starting session {event}")
             await self._transcriber.start_transcription()
             return True
 
